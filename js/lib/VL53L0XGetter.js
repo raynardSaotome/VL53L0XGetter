@@ -8,13 +8,14 @@ let VL53L0XInRangeTimeDiff = 300;
 let VL53L0XGetterRange_Correction = 0;
 
 class VL53L0XGetter {
-  constructor() {
+  constructor(debug = false) {
     /* コンストラクタ */
     this.vl = undefined;
     this._distance = 0;
     this.flg = false;
     this.inRangeLimitTime = undefined;
     this.moniterElem = undefined;
+    this.debug = debug;
   }
 
   async getsensorParam() {
@@ -30,6 +31,9 @@ class VL53L0XGetter {
       VL53L0XDistanceRangeMax >= this._distance &&
       !this.inRangeLimitTime
     ) {
+      if (this.debug) {
+        console.log("cVL:check chattering start");
+      }
       //チャタリングチェック開始
       this.inRangeLimitTime = new Date();
       this.inRangeLimitTime.setMilliseconds(
@@ -43,6 +47,9 @@ class VL53L0XGetter {
       new Date().getTime() <= this.inRangeLimitTime.getTime()
     ) {
       //距離範囲内でチャタリング時間内
+      if (this.debug) {
+        console.log("cVL:in range and in time");
+      }
       this.flg = true;
     } else if (
       VL53L0XDistanceRangeMin <= this._distance &&
@@ -50,6 +57,9 @@ class VL53L0XGetter {
       this.inRangeLimitTime &&
       new Date().getTime() > this.inRangeLimitTime.getTime()
     ) {
+      if (this.debug) {
+        console.log("cVL:in range and timeout");
+      }
       //距離範囲内だけどチャタリング時間超過
       this.flg = true;
     } else if (
@@ -58,9 +68,15 @@ class VL53L0XGetter {
       this.inRangeLimitTime &&
       new Date().getTime() <= this.inRangeLimitTime.getTime()
     ) {
+      if (this.debug) {
+        console.log("cVL:out of range  and in time");
+      }
       //距離範囲外だけどチャタリング時間内
       this.flg = true;
     } else {
+      if (this.debug) {
+        console.log("cVL:other case");
+      }
       //その他
       this.inRangeLimitTime = undefined;
       this.flg = false;
@@ -87,14 +103,6 @@ class VL53L0XGetter {
       }),
       VL53L0XGetParamInterval
     );
-    /*
-    window.setInterval(
-      await (() => {
-        this.getsensorParam();
-      }),
-      VL53L0XGetParamInterval
-    );
-*/
   }
 
   get distance() {
